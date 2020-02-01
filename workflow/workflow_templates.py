@@ -13,9 +13,9 @@ def smalt_index(target_dir, group, reference_stem):
 # mkdir {target_dir}/group
 # cd {target_dir}/group
 
-cd {target_dir}/reference_genomes/index/
+cd reference_genomes/index/
 
-smalt index -k 14 -s 8 {reference_stem} {reference_stem}.fasta
+smalt index -k 14 -s 8 {reference_stem} ../{reference_stem}.fasta
 
 """
 
