@@ -50,7 +50,8 @@ samtools sort -t tmp > {sample}.sorted.bam
 
 
 def mcorr_bam_fit(group, sample, forward, reverse, reference_stem):
-	inputs = ['output/' + group + '/' + sample + '.sorted.bam']
+	inputs = ['reference_genomes/' + reference_stem + '.gff3',
+	          'output/' + group + '/' + sample + '.sorted.bam']
 	outputs = ['output/' + group + '/' + sample + '.csv',  # mcorr_bam
 	           'output/' + group + '/' + sample + '.json', # mcorr_bam
 	           'output/' + group + '/' + sample + '_best_fit.svg',  # mcorr_fit
