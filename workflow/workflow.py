@@ -31,12 +31,16 @@ target_dir = '/faststorage/project/ClinicalMicrobio/10carl/urecomb/workflow/outp
 
 
 ### I: Reference genomes and their indexing ###
-reference_genomes = {'TG_mitis': 'mitis_b6'}
+
+# group in I and group in II must be equal.
+
+reference_genomes = {'S_mitis_tg': 'mitis_b6'}
                       #'Aactinomycetemcomitans': 'path'}
 for group, reference_stem in reference_genomes.items(): # index all genomes
 	print(group, reference_stem)
 
-	gwf.target_from_template(sanify('ure_smaltindex_' + group), smalt_index(target_dir, group, reference_stem))
+	gwf.target_from_template(sanify('ure_smaltindex_' + group),
+		                     smalt_index(target_dir, group, reference_stem))
 
 
 
@@ -47,7 +51,21 @@ print(input_data.columns)
 
 for sample_, sample in input_data.iterrows():
 
-	pass
+	group = sample['group'].strip()
+	sample_name = sample['sample'].strip()
+	reference_stem = reference_genomes[group].strip()
+
+	print(group, sample_name, reference_stem)
+
+	gwf.target_from_template(sanify('ure_smaltmap_' + group[0:5] + '_' + sample_name),
+		                     smalt_map(group, sample_name, sample['forward'].strip(), sample['reverse'].strip(), reference_stem))
+
+	gwf.target_from_template(sanify('ure_mcorr_bf_' + group[0:5] + '_' + sample_name),
+		                     mcorr_bam_fit(group, sample_name, sample['forward'].strip(), sample['reverse'].strip(), reference_stem))
+
+
+	
+
 	
 
 
