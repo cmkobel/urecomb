@@ -57,7 +57,7 @@ def mcorr_bam_fit(group, sample, forward, reverse, reference_stem):
 	           'output/' + group + '/' + sample + '_fit_reports.txt',  # mcorr_fit
 	           'output/' + group + '/' + sample + '_fit_results.csv',  # mcorr_fit
 	           'output/' + group + '/' + sample + '_parameter_histograms.svg']  # mcorr_fit
-	options = {'nodes': 1, 'cores': 4, 'memory': '16g', 'walltime': '2:00:00',  'account': 'clinicalmicrobio'}
+	options = {'nodes': 1, 'cores': 4, 'memory': '24g', 'walltime': '2:00:00',  'account': 'clinicalmicrobio'}
 	spec = f"""
 mkdir -p output/{group}
 cd output/{group}
@@ -67,6 +67,6 @@ mcorr-bam ../../reference_genomes/{reference_stem}.gff3 {sample}.sorted.bam {sam
 mcorr-fit {sample}.csv {sample}
 
 
-
+{goodbye}
 """
 	return inputs, outputs, options, spec
