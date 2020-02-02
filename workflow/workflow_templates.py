@@ -11,7 +11,7 @@ def smalt_index(target_dir, group, reference_stem):
     inputs = 'reference_genomes/' + reference_stem + '.fasta'
     outputs = ['reference_genomes/' + reference_stem + '.smi',
                'reference_genomes/' + reference_stem + '.sma',
-               'reference_genomes/' + reference_stem + '.gene.txt']
+               'reference_genomes/' + reference_stem + '.gene.gff3']
     options = {'nodes': 1, 'cores': 1, 'memory': '8g', 'walltime': '1:00:00',  'account': 'clinicalmicrobio'}
     
     spec = f"""
@@ -24,7 +24,7 @@ cd reference_genomes/
 smalt index -k 14 -s 8 {reference_stem} {reference_stem}.fasta
 
 # Later, when we are going to extract the gene sequences from each isolate, we are only interested in the genes.
-cat {reference_stem}.gff3 | awk '$3 == "gene" {{print}}' > {reference_stem}.gene.txt
+cat {reference_stem}.gff3 | awk '$3 == "gene" {{print}}' > {reference_stem}.gene.gff3
 
 
 
@@ -106,11 +106,11 @@ mcorr-fit {sample}.csv {sample} || echo "probably not enough memory"
 
 
 def extract_fasta_from_bed(group, sample, reference_stem):
-    inputs = [#'output/' + group + '/' + sample + '.sorted.bam',
-              'output/' + group + '/' + sample + '.fasta',
+    # todo: overvej at skrive denne target sammen med 'consensus'
+    inputs = ['output/' + group + '/' + sample + '.fasta',
               'reference_genomes/' + reference_stem + '.gff3']
-    outputs = ['output/' + group + '/' + sample + '.extracted.fasta']
-               #'output/' + group + '/' + sample + '_parameter_histograms.svg']  # mcorr_fit # fejl muligvis relateret til -t -T i samtools sort
+    outputs = ['output/' + group + '/' + sample + '.extracted.fasta',
+               'output/' + group + '/' + sample + '.gc.tab']
     options = {'nodes': 1, 'cores': 4, 'memory': '8g', 'walltime': '2:00:00',  'account': 'clinicalmicrobio'}
     spec = f"""
 mkdir -p output/{group}
@@ -119,7 +119,7 @@ cd output/{group}
 # The index is automatically generated
 bedtools getfasta -fi {sample}.fasta -bed ../../reference_genomes/{reference_stem}.gene.gff3 > {sample}.extracted.fasta
 
-
+infoseq -only -name -pgc {sample}.extracted.fasta | awk '{{print $1 "\t" $2}}' > {sample}.gc.tab
 
 
 {goodbye}
