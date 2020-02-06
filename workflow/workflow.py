@@ -47,22 +47,24 @@ for group, reference_stem in reference_genomes.items(): # index all genomes
 
 ### II: For each sample in the data set ###
 input_data = pd.read_csv('input.tab', delimiter = '\t')
-print(input_data.columns)
+print(' ', input_data.columns)
 
 for sample_, sample in input_data.iterrows():
+
+    # Todo: brug et andet variabelnavn end sample. clasher med sample_name
 
     group = sample['group'].strip()
     sample_name = sample['sample'].strip()
     reference_stem = reference_genomes[group].strip()
 
-    print(group, sample_name, reference_stem)
+    print(' ', group, sample_name, reference_stem)
 
     # Map reads for each isolate to the reference
     gwf.target_from_template(sanify('ure_smaltmap_' + group[0:5] + '_' + sample_name),
                              smalt_map(group, sample_name, sample['forward'].strip(), sample['reverse'].strip(), reference_stem))
 
     # infer and correlate recombination
-    gwf.target_from_template(sanify('ure_mcorr_' + group[0:5] + '_' + sample_name),
+    """  gwf.target_from_template(sanify('ure_mcorr_' + group[0:5] + '_' + sample_name),
                              mcorr_bam_fit(group, sample_name, sample['forward'].strip(), sample['reverse'].strip(), reference_stem))
 
     # 
@@ -72,6 +74,15 @@ for sample_, sample in input_data.iterrows():
 
     gwf.target_from_template(sanify('ure_extract_' + group[0:5] + '_' + sample_name),
                              extract_fasta_from_bed(group, sample_name, reference_stem))
+ """
+
+
+    gwf.target_from_template(sanify('ure_coverage_' + group[0:5] + '_' + sample_name),
+                             coverage(group, sample_name, sample['forward'].strip(), sample['reverse'].strip(), reference_stem))
+
+
+    
+
     
 
     

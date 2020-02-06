@@ -11,7 +11,7 @@ def smalt_index(target_dir, group, reference_stem):
     inputs = 'reference_genomes/' + reference_stem + '.fasta'
     outputs = ['reference_genomes/' + reference_stem + '.smi',
                'reference_genomes/' + reference_stem + '.sma',
-               'reference_genomes/' + reference_stem + '.gene.gff3']
+               'reference_genomes/' + reference_stem + '.cds.gff3']
     options = {'nodes': 1, 'cores': 1, 'memory': '8g', 'walltime': '1:00:00',  'account': 'clinicalmicrobio'}
     
     spec = f"""
@@ -23,8 +23,8 @@ cd reference_genomes/
 
 smalt index -k 14 -s 8 {reference_stem} {reference_stem}.fasta
 
-# Later, when we are going to extract the gene sequences from each isolate, we are only interested in the genes.
-cat {reference_stem}.gff3 | awk '$3 == "gene" {{print}}' > {reference_stem}.gene.gff3
+# Later, when we are going to extract the CDS sequences from each isolate, we are only interested in the CDS.
+cat {reference_stem}.gff3 | awk '$3 == "CDS" {{print}}' > {reference_stem}.cds.gff3
 
 
 
@@ -39,14 +39,15 @@ def smalt_map(group, sample, forward, reverse, reference_stem):
     inputs = ['reference_genomes/' + reference_stem + '.smi',
                'reference_genomes/' + reference_stem + '.sma']
     outputs = ['output/' + group + '/' + sample + '.sorted.bam']
-    options = {'nodes': 1, 'cores': 4, 'memory': '16g', 'walltime': '2:00:00',  'account': 'clinicalmicrobio'}
+    options = {'nodes': 1, 'cores': 8, 'memory': '32g', 'walltime': '2:00:00',  'account': 'clinicalmicrobio'}
     spec = f"""
 
 mkdir -p output/{group}
 cd output/{group}
 
 
-smalt map -n 4 ../../reference_genomes/{reference_stem} ../../{forward} ../../{reverse} | \
+# map reads to reference and sort
+smalt map -f bam -n 4 ../../reference_genomes/{reference_stem} ../../{forward} ../../{reverse} | \
 samtools sort > {sample}.sorted.bam
 
 
@@ -54,6 +55,44 @@ samtools sort > {sample}.sorted.bam
 {goodbye}
     """
     return inputs, outputs, options, spec
+
+
+
+def coverage(group, sample, forward, reverse, reference_stem):
+    inputs = ['output/' + group + '/' + sample + '.sorted.bam']
+    outputs = ['output/' + group + '/' + sample + '.sorted.filtered.bam']
+    options = {'nodes': 1, 'cores': 8, 'memory': '32g', 'walltime': '2:00:00',  'account': 'clinicalmicrobio'}
+    spec = f"""
+
+mkdir -p output/{group}
+cd output/{group}
+
+
+#cat {sample}.bam | /home/cmkobel/software/sambamba71/sambamba-0.7.1-linux-static view -f bam -F "proper_pair" -S -t 8 /dev/stdin > {sample}.proppair.bam
+#todo: overvej at bruge cram (sambamba view -f bam -T reference.fasta > out.bam)
+
+
+# Mark duplicates in the alignment
+/home/cmkobel/software/sambamba71/sambamba-0.7.1-linux-static markdup -t 8 {sample}.sorted.bam --tmpdir=/scratch/$GWF_JOBID/ {sample}.markdup.bam
+
+# Remove low-quality content.
+sambamba view -F "not (duplicate or secondary_alignment or unmapped)" -f bam {sample}.markdup.bam > {sample}.sorted.filtered.bam
+
+
+samtools depth {sample}.sorted.filtered.bam > {sample}_cov.tab
+# TODO use samtools bedcov and gff2bed instead of this whole R data wrangling nightmare
+
+
+# clean up
+#rm {sample}.markdup.bam
+#rm {sample}.markdup.bam.bai
+
+
+
+{goodbye}
+    """
+    return inputs, outputs, options, spec
+
 
 
 
@@ -79,7 +118,8 @@ GenomicConsensus --fna_file ../../reference_genomes/{reference_stem}.fasta > {sa
 
 
 def mcorr_bam_fit(group, sample, forward, reverse, reference_stem):
-    inputs = ['reference_genomes/' + reference_stem + '.gff3',
+    # todo: split op mellem mcorr_bam og mcorr_fit. Mange ting kan laves uden at fitte. 
+    inputs = ['reference_genomes/' + reference_stem + '.cds.gff3',
               'output/' + group + '/' + sample + '.sorted.bam']
     outputs = ['output/' + group + '/' + sample + '.csv',  # mcorr_bam
                'output/' + group + '/' + sample + '.json', # mcorr_bam
@@ -92,7 +132,7 @@ def mcorr_bam_fit(group, sample, forward, reverse, reference_stem):
 mkdir -p output/{group}
 cd output/{group}
 
-mcorr-bam ../../reference_genomes/{reference_stem}.gff3 {sample}.sorted.bam {sample}
+mcorr-bam ../../reference_genomes/{reference_stem}.cds.gff3 {sample}.sorted.bam {sample}
 
 mcorr-fit {sample}.csv {sample} || echo "probably not enough memory"
 
