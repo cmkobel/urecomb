@@ -89,7 +89,7 @@ gwf.target(sanify('aag_mcorr_fit_' + title),
                              f'output/{title}/{title}_recomb.csv'],
                   cores = 16,
                   memory = '32gb',
-                  walltime = '24:00:00',
+                  walltime = '1:00:00', # 24
                   account = 'clinicalmicrobio') << f"""
 
 cd output/{title}
@@ -99,7 +99,7 @@ cd single_genes
 echo here0
 
 # Run mcorr-fit
-ls *_mx.csv | parallel -j 16 'mcorr-fit {{}} {{.}}_mf'
+#ls *_mx.csv | parallel -j 16 'mcorr-fit {{}} {{.}}_mf'
 
 
 echo here1

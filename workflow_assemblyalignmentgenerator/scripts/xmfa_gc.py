@@ -29,11 +29,11 @@ with open(input_file, 'r') as file:
             #print(dna[:60])
 
             dna_gc = 0.0
-            for i in dna:
-                if i.upper() in "GC":
+            for _i, i in enumerate(dna): # TODO: expand this to use codon table.
+                if _i % 3 == 0 and i.upper() in "GC":
                     dna_gc += 1
 
-            gc_content = dna_gc / float(len(dna))
+            gc_content = dna_gc / (float(len(dna))/3)
 
             if gene in dict:
                 dict[gene].append(gc_content)
